@@ -125,7 +125,7 @@
         ignoreBlank   {Boolean}     false     When the field has no value, whether to ignore verification
         ignore        {jqSelector}    ''      Ignored fields (Using jQuery selector)
         
-        beforeSubmit  {Function}              Do something before submiting the form
+        beforeSubmit  {Function}              Do something before submit the form
         dataFilter    {Function}              Conversion ajax results
         valid         {Function}              Triggered when the form is valid
         invalid       {Function}              Triggered when the form is invalid
@@ -823,7 +823,9 @@
                         4. rule returned message;
                         5. default message;
                     */
-                    msgOpt.msg = (getDataMsg(el, field, msg || me.messages[method]) || defaults.defaultMsg).replace('{0}', me._getDisplay(el, field.display || ''));
+                    msgOpt.msg = (getDataMsg(el, field, msg || me.messages[method]) || defaults.defaultMsg).replace(/\{0\|?([^\}]*)\}/, function(){
+                        return me._getDisplay(el, field.display) || arguments[1];
+                    });
                     $(el).trigger('invalid'+CLS_NS_RULE, [method, msgOpt.msg]);
                 }
             }
@@ -1059,7 +1061,7 @@
                     }
                 }
                 if (!$msgbox) {
-                    datafor = !checkable(el) && el.id ? el.id : el.name;
+                    datafor = (!checkable(el) || !el.name) && el.id ? el.id : el.name;
                     $msgbox = this.$el.find(msgOpt.wrapper + '.' + CLS_MSG_BOX + '[for="' + datafor + '"]');
                 }
             } else {
@@ -1622,11 +1624,16 @@
             var me = this,
                 elem, count;
 
-            count = me.$el.find('input[name="' + element.name + '"]').filter(function() {
-                var el = this;
-                if (!elem && checkable(el)) elem = el;
-                return !el.disabled && el.checked;
-            }).length;
+            if (element.name) {
+                count = me.$el.find('input[name="' + element.name + '"]').filter(function() {
+                    var el = this;
+                    if (!elem && checkable(el)) elem = el;
+                    return !el.disabled && el.checked;
+                }).length;
+            } else {
+                elem = element;
+                count = elem.checked;
+            }
 
             if (params) {
                 return me.getRangeMsg(count, params, 'checked');
